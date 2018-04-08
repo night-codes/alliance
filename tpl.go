@@ -1,3 +1,6 @@
+package main //aliance
+
+const tpl = `
 ;(function(global) {
     var alliance = global["goalliance"];
     var extender = {
@@ -25,55 +28,20 @@
     }
 
     alliance.uris.extend({
-        "main": "main.js",
-        "test1": "test1.js",
-        "test2": "test2/index.js",
-        "test3": "test3.js",
-        "test4": "test4.js",
+        {{range $index, $element := .uris}}"{{$index}}": "{{$element}}",
+        {{end}}
     });
     alliance.modules.extend({
-        "main": function(require, exports, module, define) {
-            "use strict";
-            module.dependencies = ["test1"];
-            module.init = function() {
-                console.log("init main");
-            }
-            exports.test = function(){
-                require("test4");
-            }
-        },
-        "test1": function(require, exports, module, define) {
-            "use strict";
-            module.init = function() {
-                require("test2");
-                console.log("init test1");
-            }
-            module.dependencies = ["test3"];
-        },
-        "test2": function(require, exports, module, define) {
-            "use strict";
-            module.init = function() {
-                console.log("init test2");
-            }
-        },
-        "test3": function(require, exports, module, define) {
-            "use strict";
-            module.init = function() {
-                console.log("init test3");
-            }
-            module.dependencies = ["test4"];
-        },
-        "test4": function(require, exports, module, define) {
+        {{range $index, $element := .modules}}
+        "{{$index}}": function(require, exports, module, define) {
             "use strict";
             try {
-                module.init = function() {
-                    console.log("init test4");
-                }
-                module.dependencies = []; 
+                {{$element}}
             }  catch (err) {     
-                throw '"'+alliance.uris["test4"]+'": '+err;
-            }
-        },
+                throw '"'+alliance.uris["{{$index}}"]+'": '+err;
+            }  
+        },     
+        {{end}}
     });
 
 
@@ -128,3 +96,4 @@
 
     global["require"] = require;
 })(this);
+`
