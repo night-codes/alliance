@@ -1,4 +1,4 @@
-package main //aliance
+package alliance
 
 const tpl = `
 ;(function(global) {
