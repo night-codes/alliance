@@ -16,7 +16,7 @@ const tpl = `
         },
     }
 
-    if (typeof alliance === "undefined") {
+    if (alliance === undefined) {
         alliance = {
             uris: {},
             modules: {},
@@ -47,17 +47,10 @@ const tpl = `
 
 
     var require = function (path) {
-        if (typeof path !== "string") {
-            return
-        }
+        if (typeof path !== "string") return;
         path = path.replace(/-/g, '_').replace(/.js$/g, '').toLowerCase();
-        if (typeof alliance.exports[path] !== "undefined") {
-            return alliance.exports[path];
-        }
-
-        if (alliance.circular[path]) {
-            throw "Module '"+path+"' has circular dependencies!";
-        }
+        if (alliance.exports[path] !== undefined) return alliance.exports[path];
+        if (alliance.circular[path]) throw "Module '"+path+"' has circular dependencies!";
 
         var module = {
             id: path,
@@ -67,7 +60,7 @@ const tpl = `
         };
         Object.defineProperty(module.exports, "extend", extender);
 
-        if (typeof alliance.modules[path] !== "undefined") {
+        if (alliance.modules[path] !== undefined) {
             alliance.circular[path] = true;
             alliance.modules[path](require, module.exports, module);
             
@@ -90,10 +83,7 @@ const tpl = `
         }
     }
 
-    if (typeof require("main") === "undefined") {
-        console.error("Module 'main' is not defined")
-    }
-
+    if (alliance.modules["main"] !== undefined) require("main");
     global["require"] = require;
 })(this);
 `
