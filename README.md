@@ -1,5 +1,5 @@
 # alliance
-CommonJS and AMD modules compiler written in Golang.
+CommonJS and AMD modules compiler library written in Golang. 
 
 ## How To Use:
 
