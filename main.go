@@ -23,7 +23,7 @@ func Make(path string, gz bool) (string, error) {
 	filepath.Walk(path, func(filename string, info os.FileInfo, err error) error {
 		if !info.IsDir() && err == nil && filepath.Ext(filename) == ".js" {
 			if rel, err := filepath.Rel(path, filename); err == nil {
-				rel =  strings.Replace(strings.TrimSuffix(rel, ".js"), "-", "_", -1)
+				rel = strings.ToLower(strings.Replace(strings.TrimSuffix(rel, ".js"), "-", "_", -1))
 				if bfile, err := ioutil.ReadFile(filename); err == nil {
 					modules[rel] = string(bfile)
 					uris[rel] = filename
