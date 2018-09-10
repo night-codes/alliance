@@ -1,34 +1,40 @@
 package alliance
 
-const tpl = `
-;(function(global) {
-    var alliance = global["goalliance"];
-    var extender = {
-        enumerable: false,
-        writable: false,
-        configurable: false,
-        value: function(ext) {
-            for (var e in ext) {
-                if (ext.hasOwnProperty(e)) {
-                    this[e] = ext[e];
+const tpl = `;
+(function (global) {
+    "use strict";
+    var alliance = global["goalliance"],
+        extr = {
+            enumerable: false,
+            writable: false,
+            configurable: false,
+            value: function (ext) {
+                for (var e in ext) {
+                    if (ext.hasOwnProperty(e)) {
+                        this[e] = ext[e];
+                    }
                 }
-            }
-        },
-    }
-
+            },
+        };
     if (alliance === undefined) {
         alliance = {
             uris: {},
+            byUri: {},
             modules: {},
             exports: {},
             circular: {},
-        }
-        Object.defineProperty(alliance.uris, "extend", extender);
-        Object.defineProperty(alliance.modules, "extend", extender);
+            waits: {},
+        };
+        Object.defineProperty(alliance.byUri, "extend", extr);
+        Object.defineProperty(alliance.uris, "extend", extr);
+        Object.defineProperty(alliance.modules, "extend", extr);
     }
-
     alliance.uris.extend({
         {{range $index, $element := .uris}}"{{$index}}": "{{$element}}",
+        {{end}}
+    });
+    alliance.byUri.extend({
+        {{range $index, $element := .uris}}"{{$element}}": "{{$index}}",
         {{end}}
     });
     alliance.modules.extend({
@@ -37,53 +43,104 @@ const tpl = `
             "use strict";
             try {
                 {{$element}}
-            }  catch (err) {     
+            }  catch (err) {
                 throw '"'+alliance.uris["{{$index}}"]+'": '+err;
-            }  
-        },     
+            }
+        },
         {{end}}
     });
+    function define(name, deps, callback) {
+        var module = this;
+        //Allow for anonymous modules
+        if (typeof name !== 'string') {
+            callback = deps;
+            deps = name;
+            name = null;
+        } else {
+            module.name = name;
+        }
+        //This module may not have deps
+        if (!Array.isArray(deps)) {
+            callback = deps;
+            deps = [];
+        }
+        module.deps = deps;
+        if (typeof callback === "function") module.init = callback;
+    }
+    function clr(path, newPath) {
+        var uri = alliance.uris[path];
+        alliance.uris[newPath] = alliance.uris[path];
+        alliance.byUri[uri] = "path";
+    }
+    function require(path, fn) {
+        if (Array.isArray(path) && typeof fn === 'function') {
+            var results = [];
+            for (var i in path) {
+                var d = path[i];
+                results.push(require(d));
+            }
+            fn.apply(module, results);
+            return;
+        }
 
-
-
-    var require = function (path) {
         if (typeof path !== "string") return;
-        path = path.replace(/-/g, '_').replace(/.js$/g, '').toLowerCase();
+        if (path === "require") return require;
+        path = path.replace(/^\.\//g, '');
+        path = alliance.byUri[path] ? alliance.byUri[path] : path.replace(/-/g, '_').replace(/\.js$/g, '').toLowerCase();
         if (alliance.exports[path] !== undefined) return alliance.exports[path];
-        if (alliance.circular[path]) throw "Module '"+path+"' has circular dependencies!";
-
+        if (alliance.circular[path]) throw "Module '" + path + "' has circular dependencies!";
         var module = {
             id: path,
             uri: alliance.uris[path],
             exports: {},
-            dependencies: [], 
+            deps: [],
         };
-        Object.defineProperty(module.exports, "extend", extender);
-
+        Object.defineProperty(module.exports, "extend", extr);
         if (alliance.modules[path] !== undefined) {
             alliance.circular[path] = true;
-            alliance.modules[path](require, module.exports, module);
-            
-            if (Array.isArray(module.dependencies) && module.dependencies.length>0) {
-                for (var i in module.dependencies) {
-                    var d =  module.dependencies[i];
-                    require(d);
+            alliance.modules[path](require, module.exports, module, function () {
+                if (arguments.length === 1 && typeof arguments[0] === 'object') {
+                    module.exports = arguments[0];
+                    return;
+                }
+                define.apply(module, arguments);
+            });
+            var results = [];
+            if (Array.isArray(module.deps) && module.deps.length > 0) {
+                for (var k in module.deps) {
+                    var dep = module.deps[k];
+                    if (dep === "require") {
+                        results.push(require);
+                    } else if (dep === "module") {
+                        results.push(module);
+                    } else if (dep === "exports") {
+                        results.push(module.exports);
+                    } else {
+                        results.push(require(dep));
+                    }
                 }
             }
-            
             if (typeof module.init === 'function') {
                 try {
-                    module.init();   
-                }  catch (err) {
-                    throw '"'+alliance.uris[path]+'": function init(): '+err
+                    var expts = module.init.apply(module, results);
+                    if (typeof expts !== 'undefined') {
+                        module.exports = expts;
+                    }
+                } catch (err) {
+                    throw '"' + alliance.uris[path] + '": function init(): ' + err;
                 }
             }
-            alliance.exports[path] = module.exports; 
+            if (typeof module.name === 'string') {
+                clr(path, module.name);
+                path = module.name;
+            }
+            alliance.exports[path] = module.exports;
             return module.exports;
         }
     }
-
-    if (alliance.modules["main"] !== undefined) require("main");
-    global["require"] = require;
+    define.config = function(){};
+    require.config = function(){};
+    if (alliance.modules.main !== undefined) require("main");
+    global.require = require;
 })(this);
 `
