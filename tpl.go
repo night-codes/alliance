@@ -49,7 +49,7 @@ const tpl = `;
         },
         {{end}}
     });
-    function define(name, deps, callback) {
+    var define = function(name, deps, callback) {
         var module = this;
         //Allow for anonymous modules
         if (typeof name !== 'string') {
@@ -66,13 +66,13 @@ const tpl = `;
         }
         module.deps = deps;
         if (typeof callback === "function") module.init = callback;
-    }
-    function clr(path, newPath) {
+    },
+    clr = function(path, newPath) {
         var uri = alliance.uris[path];
         alliance.uris[newPath] = alliance.uris[path];
         alliance.byUri[uri] = "path";
-    }
-    function require(path, fn) {
+    },
+    require = function(path, fn) {
         if (Array.isArray(path) && typeof fn === 'function') {
             var results = [];
             for (var i in path) {
@@ -137,7 +137,7 @@ const tpl = `;
             alliance.exports[path] = module.exports;
             return module.exports;
         }
-    }
+    };
     define.config = function(){};
     require.config = function(){};
     if (alliance.modules.main !== undefined) require("main");
