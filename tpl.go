@@ -137,7 +137,8 @@ const tpl = `;
             alliance.exports[path] = module.exports;
             return module.exports;
         }
-    };
+	};
+	define.amd = true;
     define.config = function(){};
     require.config = function(){};
     if (alliance.modules.main !== undefined) require("main");
