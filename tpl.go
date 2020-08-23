@@ -79,7 +79,9 @@ const tpl = `;
 				var d = path[i];
 				results.push(require(d));
 			}
-			fn.apply(module, results);
+			if (typeof fn === "function") {
+				fn.apply(module, results);
+			}
 			return;
 		}
 
