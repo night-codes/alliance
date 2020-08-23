@@ -73,7 +73,7 @@ const tpl = `;
 		alliance.byUri[uri] = "path";
 	},
 	require = function(path, fn) {
-		if (Array.isArray(path) && typeof fn === 'function') {
+		if (Array.isArray(path)) {
 			var results = [];
 			for (var i in path) {
 				var d = path[i];
