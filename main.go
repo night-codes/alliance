@@ -13,7 +13,7 @@ import (
 )
 
 // Make one script from modules directory
-func Make(path string, gz bool) (string, error) {
+func Make(path string, gz bool, ignore ...string) (string, error) {
 	uris := map[string]string{}
 	modules := map[string]string{}
 	if _, err := os.Stat(path); err != nil {
@@ -24,9 +24,18 @@ func Make(path string, gz bool) (string, error) {
 		if !info.IsDir() && err == nil && filepath.Ext(filename) == ".js" {
 			if rel, err := filepath.Rel(path, filename); err == nil {
 				rel = strings.ToLower(strings.Replace(strings.TrimSuffix(rel, ".js"), "-", "_", -1))
-				if bfile, err := ioutil.ReadFile(filename); err == nil {
-					modules[rel] = string(bfile)
-					uris[rel] = filename
+				ign := false
+				for k := range ignore {
+					if strings.HasPrefix(rel, ignore[k]) {
+						ign = true
+						break
+					}
+				}
+				if !ign {
+					if bfile, err := ioutil.ReadFile(filename); err == nil {
+						modules[rel] = string(bfile)
+						uris[rel] = filename
+					}
 				}
 			}
 		}
